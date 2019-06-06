@@ -1,4 +1,5 @@
-var controls, scene, renderer, camera, ship, plane, plane1;
+//Init VARS
+var controls, scene, renderer, camera, ship, plane, plane1, line;
 
 var comets = []
 var trails = []
@@ -15,11 +16,16 @@ var posBackShipY = 0
 //Vars for move ship
 var up = false, left = false, rigth = false, down = false
 var upCount = 0, downCount = 0, leftCount = 0, rigthCount = 0 //Count is need to prevent error in first case
+var arrow = 1 //1 left, 2 rigth
+var modeConfirmed = false
 
 var pause = false
 var isPause = false
+var inMenu = true
 
+var oneTimeThing = false
 
+//OnLoad
 window.onload = function init() {
 
   var canvas = document.getElementById("webglcanvas");
@@ -39,7 +45,7 @@ window.onload = function init() {
   plane1 = new THREE.Mesh(geometry, material);
   plane1.scale.set(1.3, 1.3, 1.3)
   plane1.position.z = -190
-  
+
 
 
 
@@ -51,8 +57,8 @@ window.onload = function init() {
   scene.add(camera);
 
   //AXIS
-  var axes = new THREE.AxesHelper(10);
-  scene.add(axes);
+  //var axes = new THREE.AxesHelper(10);
+  //scene.add(axes);
 
   //Clear and functions
   renderer.setClearColor("#000000");
@@ -60,8 +66,11 @@ window.onload = function init() {
   createLights()
   createSpaceShip()
   createBackground()
-  createUI()
+
   createMenu()
+  drawMenuLine()
+
+  //createUI()
 
 
   controls = new THREE.OrbitControls(camera);
@@ -84,7 +93,31 @@ window.onload = function init() {
   animate()
 
 }
+
+//Create
+function drawMenuLine() {
+
+  var material = new THREE.LineBasicMaterial({
+    color: 0xFF775F //Panttone of the year :D (Coral)
+  });
+
+  var geometry = new THREE.Geometry();
+  geometry.vertices.push(
+    new THREE.Vector3(-4, 0, 0),
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(-4, 1, 0),
+    new THREE.Vector3(-4, 0, 0)
+  );
+
+  line = new THREE.Line(geometry, material);
+  line.position.set(-0.37, -3.63, 0)
+  scene.add(line);
+  
+}
+
 function createMenu() {
+  //Create menu interface
   var geometry = new THREE.PlaneGeometry(200, 150);
   var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
   var texture = new THREE.TextureLoader().load("./Stuff/menu.png");
@@ -94,9 +127,14 @@ function createMenu() {
   plane2.position.z = -190
   scene.add(plane2);
 
+  //Change ship specs for the menu
+  shipPivot.scale.set(1.5, 1.5, 1.5)
+  shipPivot.rotation.y = Math.PI
+  shipPivot.rotation.x += Math.PI / 20
+  shipPivot.position.y -= 1
 
 
-
+  modeConfirmed = false
 }
 
 function createUI() {
@@ -195,7 +233,7 @@ function createSpaceShip() {
     ship.traverse(function (child) {
       //search for a Mesh
       if (child instanceof THREE.Mesh) {
-        child.material = new THREE.MeshPhongMaterial({ color: 0xF5E4BB });
+        child.material = new THREE.MeshNormalMaterial({ color: 0xF5E4BB });
         child.scale.set(0.3, 0.3, 0.3)
         child.material.side = THREE.DoubleSide
       }
@@ -411,13 +449,90 @@ function createLights() {
 }
 
 
-
+//Animate
 function animate() {
   //createjs.Sound.play(mainTheme);
 
+  if (modeConfirmed) { //Carregou na tecla para confirmar o modo
+    inMenu = false
+    
+
+
+  }
+
+  if (inMenu) {
+    
+    shipPivot.rotation.y += Math.PI / 300
+    if (line && arrow == 2) {
+      line.position.x = 4.36
+      
+    }
+    if (line && arrow == 1) {
+      line.position.x = -0.37
+      
+    }
+
+  }
+  if (!inMenu) { //Inicia o jogo
+
+    scene.remove(plane2)//remove menu interface
+    scene.remove(line)
+
+    if (arrow == 1) { //Mode 1
+      initModes(storyMode)
+    }
+    if (arrow == 2) { //Mode 2
+
+      initModes(endlessMode)
+
+
+    }
+
+
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+
+}
+
+
+
+function initModes(mode) {
+  //Animation menu -> startgame
+  //This code change the size of the ship
+  if (shipPivot.scale.x >= 1) {
+    shipPivot.scale.x -= 0.01
+    shipPivot.scale.y -= 0.01
+    shipPivot.scale.z -= 0.01
+  }
+  //This code put the ship in the rigth direction and then init the mode
+  while ((shipPivot.rotation.y * 180 / Math.PI) > 360) {
+    shipPivot.rotation.y -= 360 * Math.PI / 180
+  }
+
+  while ((shipPivot.rotation.y * 180 / Math.PI) < -360) {
+    shipPivot.rotation.y += 360 * Math.PI / 180
+  }
+
+  if ((shipPivot.rotation.y * 180 / Math.PI) > 3 && !oneTimeThing) {
+    shipPivot.rotation.y -= Math.PI / 80
+  }
+  else if ((shipPivot.rotation.y * 180 / Math.PI) < -3 && !oneTimeThing) {
+    shipPivot.rotation.y += Math.PI / 80
+  }
+  else {
+    mode() //Pass a JavaScript function as parameter :D
+
+  }
+}
+
+//Modes
+function endlessMode() {
+  oneTimeThing = true
   if (pause && !isPause) {
 
-    scene.add(plane1);   
+    scene.add(plane1);
+
     isPause = true
   }
   else if (!pause) {
@@ -456,11 +571,18 @@ function animate() {
     }
 
   }
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
 
 }
 
+function storyMode() {
+
+
+
+
+
+}
+
+//2 ship trails
 function makeShipTrail1() {
 
   if (ship) {
@@ -619,7 +741,7 @@ function makeShipTrail() {
 
 }
 
-
+//Move, update
 function moveComets() {
 
   comets.forEach((comet, i) => {
@@ -719,6 +841,7 @@ function moveShip() {
 
 }
 
+//HandleKeys
 //KEYDOWN
 function handleKeyDown(event) {
   var char = String.fromCharCode(event.keyCode);
@@ -735,16 +858,28 @@ function handleKeyDown(event) {
   }
   if (char == "A") {
     left = true
+    if (!modeConfirmed) {
+      arrow = 1
+    }
   }
   if (char == "D") {
     rigth = true
+    if (!modeConfirmed) {
+      arrow = 2
+    }
+  }
+  if (char == " ") { //Change to other key
+
+    if (modeConfirmed) {
+      pause = !pause
+    }
+    if (!modeConfirmed) {
+      modeConfirmed = true
+      createUI()
+    }
 
   }
-  if (char == "Z") { //Change to other key
 
-    pause = !pause
-
-  }
 
 }
 
