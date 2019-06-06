@@ -1,0 +1,19 @@
+Tiros 
+Naves inimigas
+Boss
+Menu- 2 modos, pausa?
+Interface funcional
+Ultimate
+Colisões 
+
+
+Para lembrar:
+
+As naves inimigas surgem e vao ate uma posição exemplo -50
+Pode ser necessario criar linha que diz para onde o cometa esta a ir, a partir de -50 por exemplo
+Tiros automatico
+O boss tem muita vida
+Pensar no ultimate, receber vida, tiros mudar de cor e serem mais fortes, mais tiros...
+Tirar orbit no final
+Mudar cores das luzes dos cometas, um azul mais parecido com o do vortex?
+Fazer moldura para o canva, por logo, cor de fundo

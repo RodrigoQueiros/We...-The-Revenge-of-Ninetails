@@ -1,10 +1,23 @@
-var controls, scene, renderer, camera, ship, plane;
+var controls, scene, renderer, camera, ship, plane, plane1;
 
 var comets = []
+var trails = []
+var trails2 = []
 var countFrames = 0
+var countFramesTrail = 0
+var countFramesTrail2 = 0
+var posBackShipX = 0
+var posBackShipY = 0
 
 //Sound
 //var mainTheme = "mainTheme"
+
+//Vars for move ship
+var up = false, left = false, rigth = false, down = false
+var upCount = 0, downCount = 0, leftCount = 0, rigthCount = 0 //Count is need to prevent error in first case
+
+var pause = false
+var isPause = false
 
 
 window.onload = function init() {
@@ -17,8 +30,16 @@ window.onload = function init() {
 
 
   //createjs.Sound.registerSound("Stuff/Hollow Knight- Sealed Vessel Theme EXTENDED.mp3", mainTheme);
-  //createjs.Sound.play(mainTheme); 
 
+
+  var geometry = new THREE.PlaneGeometry(200, 150);
+  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  var texture = new THREE.TextureLoader().load("./Stuff/pause.png");
+  material.map = texture;
+  plane1 = new THREE.Mesh(geometry, material);
+  plane1.scale.set(1.3, 1.3, 1.3)
+  plane1.position.z = -190
+  
 
 
 
@@ -40,6 +61,7 @@ window.onload = function init() {
   createSpaceShip()
   createBackground()
   createUI()
+  createMenu()
 
 
   controls = new THREE.OrbitControls(camera);
@@ -62,6 +84,20 @@ window.onload = function init() {
   animate()
 
 }
+function createMenu() {
+  var geometry = new THREE.PlaneGeometry(200, 150);
+  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  var texture = new THREE.TextureLoader().load("./Stuff/menu.png");
+  material.map = texture;
+  plane2 = new THREE.Mesh(geometry, material);
+  plane2.scale.set(1.2, 1.2, 1.2)
+  plane2.position.z = -190
+  scene.add(plane2);
+
+
+
+
+}
 
 function createUI() {
   /*
@@ -78,19 +114,19 @@ function createUI() {
   var geometry = new THREE.PlaneGeometry(10, 1);
   var material = new THREE.MeshBasicMaterial({ color: 0x262626, side: THREE.DoubleSide });
   var healthBarBorder = new THREE.Mesh(geometry, material);
-  healthBarBorder.position.set(-9,12.5,-20)
+  healthBarBorder.position.set(-9, 12.5, -20)
   scene.add(healthBarBorder);
 
   var geometry = new THREE.PlaneGeometry(9.6, 0.6);
   var material = new THREE.MeshBasicMaterial({ color: 0x595959, side: THREE.DoubleSide });
   var healthBarBorderBack = new THREE.Mesh(geometry, material);
-  healthBarBorderBack.position.set(-9,12.5,-20)
+  healthBarBorderBack.position.set(-9, 12.5, -20)
   scene.add(healthBarBorderBack);
 
   var geometry = new THREE.PlaneGeometry(9, 0.6);
   var material = new THREE.MeshBasicMaterial({ color: 0xC9000A, side: THREE.DoubleSide });
   var healthBar = new THREE.Mesh(geometry, material);
-  healthBar.position.set(-9,12.5,-20) //To move the bar you need to change position in half of the value of the size reduzed,X
+  healthBar.position.set(-9, 12.5, -20) //To move the bar you need to change position in half of the value of the size reduzed,X
   scene.add(healthBar);
 
   //Ultimate
@@ -116,7 +152,7 @@ function createUI() {
   UltimateBar.position.set(-16, 11, -20)
   scene.add(UltimateBar)
 
-  
+
 
 
 }
@@ -138,6 +174,16 @@ function createSpaceShip() {
   // mtlLoader.load('./Stuff/Ninetails_NaveRodrigo.mtl', function (materials) {
   //   materials.preload(); // load a material’s resource
 
+  shipPivot = new THREE.Object3D;
+
+  //shipPivot.rotateY(Math.PI)
+  shipPivot.rotation.x = Math.PI
+  shipPivot.rotation.z = Math.PI
+  shipPivot.rotation.y = 0
+  scene.add(shipPivot);
+
+
+
   var objLoader = new THREE.OBJLoader();
   // objLoader.setMaterials(materials);
 
@@ -149,23 +195,28 @@ function createSpaceShip() {
     ship.traverse(function (child) {
       //search for a Mesh
       if (child instanceof THREE.Mesh) {
-        child.material = new THREE.MeshNormalMaterial({ color: 0xF5E4BB });
-        child.scale.set(0.5, 0.5, 0.5)
+        child.material = new THREE.MeshPhongMaterial({ color: 0xF5E4BB });
+        child.scale.set(0.3, 0.3, 0.3)
         child.material.side = THREE.DoubleSide
       }
     });
 
-    ship.rotateY(Math.PI)
+    //ship.rotateY(Math.PI)
     ship.scale.set(0.1, 0.1, 0.1)
     ship.position.y = 0
     ship.position.z = 0
-    ship.rotation.x = Math.PI
-    ship.rotation.z = Math.PI
-    ship.rotation.y = 0
+    //ship.rotation.x = Math.PI
+    //ship.rotation.z = Math.PI
+    //ship.rotation.y = 0
 
-    scene.add(ship);
+
+
+
+    shipPivot.add(ship);
     //
     //Ship 
+
+
 
 
   });
@@ -184,7 +235,7 @@ function createRocks() {
   while (countFrames > 360) {
     countFrames = 0
     var x, y, z
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 5; i++) {
       x = (Math.random() * 12) - 6
       y = (Math.random() * 8) - 4
       z = -200
@@ -205,8 +256,8 @@ function createRocks() {
 
 
       sphere = new THREE.Mesh(geometry, texture);
-      sphere.castShadow = true;
-      sphere.receiveShadow = true;
+      //sphere.castShadow = true;
+      //sphere.receiveShadow = true;
       sphere.position.set(x, y, z);
 
       rand = (Math.random() * 0.2) + 0.1
@@ -334,58 +385,238 @@ function createLights() {
 
   var light = new THREE.PointLight(0xff7f24, 6, 1000);
   light.position.set(50, 0, 500);
-  light.castShadow = true;            // default false
-  light.shadow.mapSize.width = 1024;  // default 512
-  light.shadow.mapSize.height = 1024; // default 512
-  light.shadow.camera.near = 2;       // default 0.5
-  light.shadow.camera.far = 1500;
+  // light.castShadow = true;            // default false
+  // //light.shadow.mapSize.width = 1024;  // default 512
+  // light.shadow.mapSize.height = 1024; // default 512
+  // light.shadow.camera.near = 2;       // default 0.5
+  // light.shadow.camera.far = 1500;
   scene.add(light);
 
   var light2 = new THREE.PointLight(0x6495ed, 6, 1000);
   light2.position.set(-50, -100, 0);
-  light2.castShadow = true;            // default false
-  light2.shadow.mapSize.width = 1024;  // default 512
-  light2.shadow.mapSize.height = 1024; // default 512
-  light2.shadow.camera.near = 2;       // default 0.5
-  light2.shadow.camera.far = 1500;
+  // light2.castShadow = true;            // default false
+  // light2.shadow.mapSize.width = 1024;  // default 512
+  // light2.shadow.mapSize.height = 1024; // default 512
+  // light2.shadow.camera.near = 2;       // default 0.5
+  // light2.shadow.camera.far = 1500;
   scene.add(light2); var light2 = new THREE.PointLight(0x6495ed, 6, 1000);
   light2.position.set(-250, -100, 0);
-  light2.castShadow = true;            // default false
-  light2.shadow.mapSize.width = 1024;  // default 512
-  light2.shadow.mapSize.height = 1024; // default 512
-  light2.shadow.camera.near = 2;       // default 0.5
-  light2.shadow.camera.far = 1500;
+  // light2.castShadow = true;            // default false
+  // light2.shadow.mapSize.width = 1024;  // default 512
+  // light2.shadow.mapSize.height = 1024; // default 512
+  // light2.shadow.camera.near = 2;       // default 0.5
+  // light2.shadow.camera.far = 1500;
   scene.add(light2);
 
 }
 
-//Vars for move ship
-var up = false, left = false, rigth = false, down = false
-var upCount = 0, downCount = 0, leftCount = 0, rigthCount = 0 //Count is need to prevent error in first case
+
 
 function animate() {
+  //createjs.Sound.play(mainTheme);
+
+  if (pause && !isPause) {
+
+    scene.add(plane1);   
+    isPause = true
+  }
+  else if (!pause) {
+
+    scene.remove(plane1)
+    isPause = false
+
+    plane.rotation.z += 0.001
+
+    createRocks()
+    moveShip()
+    moveComets()
+    makeShipTrail()
+    makeShipTrail1()
+
+    /*
+    if(ship){
+      camera.lookAt(ship.position)
+    }*/
+
+    if (ship && comets.length > 0) {
+      BBox = new THREE.Box3().setFromObject(ship);
+
+      comets.forEach(comet => {
+
+        if (comet.obj.position.z > -20) {
+          BBox2 = new THREE.Box3().setFromObject(comet.obj);
+          var collision = BBox.intersectsBox(BBox2);
+          console.log(collision)
+
+        }
 
 
+      });
 
-  plane.rotation.z += 0.001
+    }
 
-  createRocks()
-  moveShip()
-  moveComets()
-  /*
-  if(ship){
-    camera.lookAt(ship.position)
-  }*/
-
-
-
-
-
-
-
-
+  }
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
+
+}
+
+function makeShipTrail1() {
+
+  if (ship) {
+    if (countFramesTrail > 0) {
+      for (let i = 0; i < 1; i++) {
+
+        var geometry = new THREE.SphereGeometry(1, 8, 8);
+        var material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+        material.color = new THREE.Color(0xF94000)
+        var sphere1 = new THREE.Mesh(geometry, material);
+
+
+        sphere1.position.x = ship.position.x - 0.15
+        sphere1.position.y = ship.position.y + 0.5
+        sphere1.position.z = -1.8
+
+
+        sphere1.scale.set(0.1, 0.1, 0.5)
+        let vX = Math.random() * 0.002 - 0.001;
+        let vY = Math.random() * 0.001 - 0.0005;
+
+        //var normalMatrix = new THREE.Matrix4().extractRotation(ship.matrixWorld);
+        //normal = new THREE.Vector3(0,0,-1)
+        //bulletDirection = normal.clone().applyMatrix4(normalMatrix)
+
+
+        shipPivot.add(sphere1);
+        trails.push({ sphere: sphere1, vx: vX, vy: vY }) //, direction: bulletDirection.clone()
+
+
+      }
+      countFramesTrail = 0
+    }
+
+    trails.forEach((trail, i) => {
+
+      //trail.sphere.position.addVectors(trail.sphere.position.clone(), trail.direction.clone().multiplyScalar(0.1)); 
+
+      trail.sphere.position.z -= 0.1
+      trail.sphere.scale.x += 0.01
+      trail.sphere.scale.y += 0.01
+      trail.sphere.scale.z += 0.01
+      trail.sphere.position.x += trail.vx
+      trail.sphere.position.y += trail.vy
+      trail.sphere.material.opacity -= 0.05
+
+
+      if (trail.sphere.position.z < -2) {
+        trail.sphere.material.color = new THREE.Color(0xFF8100)
+
+      }
+      if (trail.sphere.position.z < -2.4) {
+        trail.sphere.material.color = new THREE.Color(0xF6A321)
+
+      }
+      if (trail.sphere.position.z < -2.8) {
+        trail.sphere.material.color = new THREE.Color(0xF1C542)
+
+      }
+
+      if (trail.sphere.position.z < -4) {
+
+        shipPivot.remove(trails[i].sphere)
+        trails.splice(i, 1)
+        i--
+      }
+    });
+
+
+  }
+
+  countFramesTrail += 1
+
+
+
+
+}
+
+function makeShipTrail() {
+
+  if (ship) {
+    if (countFramesTrail2 > 0) {
+      for (let i = 0; i < 1; i++) {
+
+        var geometry = new THREE.SphereGeometry(1, 8, 8);
+        var material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
+        material.color = new THREE.Color(0xF94000)
+        var sphere2 = new THREE.Mesh(geometry, material);
+
+
+        sphere2.position.x = ship.position.x + 0.2
+        sphere2.position.y = ship.position.y + 0.5
+        sphere2.position.z = -1.8
+
+
+
+
+        sphere2.scale.set(0.1, 0.1, 0.5)
+        let vX = Math.random() * 0.002 - 0.001;
+        let vY = Math.random() * 0.001 - 0.0005;
+
+        //var normalMatrix = new THREE.Matrix4().extractRotation(ship.matrixWorld);
+        //normal = new THREE.Vector3(0,0,-1)
+        //bulletDirection = normal.clone().applyMatrix4(normalMatrix)
+
+
+        shipPivot.add(sphere2);
+        trails2.push({ sphere: sphere2, vx: vX, vy: vY }) //, direction: bulletDirection.clone()
+
+
+      }
+      countFramesTrail2 = 0
+    }
+
+    trails2.forEach((trail, i) => {
+
+      //trail.sphere.position.addVectors(trail.sphere.position.clone(), trail.direction.clone().multiplyScalar(0.1)); 
+
+      trail.sphere.position.z -= 0.1
+      trail.sphere.scale.x += 0.01
+      trail.sphere.scale.y += 0.01
+      trail.sphere.scale.z += 0.01
+      trail.sphere.position.x += trail.vx
+      trail.sphere.position.y += trail.vy
+      trail.sphere.material.opacity -= 0.05
+
+
+      if (trail.sphere.position.z < -2) {
+        trail.sphere.material.color = new THREE.Color(0xFF8100)
+
+      }
+      if (trail.sphere.position.z < -2.4) {
+        trail.sphere.material.color = new THREE.Color(0xF6A321)
+
+      }
+      if (trail.sphere.position.z < -2.8) {
+        trail.sphere.material.color = new THREE.Color(0xF1C542)
+
+      }
+
+      if (trail.sphere.position.z < -4) {
+
+        shipPivot.remove(trails2[i].sphere)
+        trails2.splice(i, 1)
+        i--
+      }
+    });
+
+
+  }
+
+  countFramesTrail2 += 1
+
+
+
+
 }
 
 
@@ -394,7 +625,7 @@ function moveComets() {
   comets.forEach((comet, i) => {
 
     //Move
-    comet.obj.position.z += 0.1
+    comet.obj.position.z += 0.2
     if (comet.obj.position.z > 10) {
       scene.remove(comets[i].obj)
 
@@ -411,22 +642,22 @@ function moveComets() {
 //Move Ship
 function moveShip() {
   if (up) {
-    if (ship.position.y < 3) {
+    if (shipPivot.position.y < 3) {
 
       if (upCount == 0) {
         upCount = 1
       }
-      ship.position.y += 0.1 //Move ship up
-      if (ship.rotation.x < (Math.PI + Math.PI / 8)) {
-        ship.rotation.x += Math.PI / 80 //Rotate Ship up
+      shipPivot.position.y += 0.1 //Move ship up
+      if (shipPivot.rotation.x < (Math.PI + Math.PI / 8)) {
+        shipPivot.rotation.x += Math.PI / 80 //Rotate Ship up
 
       }
     }
 
   }
   else if (!up && upCount == 1) { //Correct rotation when keyup
-    if (ship.rotation.x > Math.PI) {
-      ship.rotation.x -= Math.PI / 160
+    if (shipPivot.rotation.x > Math.PI) {
+      shipPivot.rotation.x -= Math.PI / 160
 
     }
   }
@@ -435,16 +666,16 @@ function moveShip() {
     if (leftCount == 0) {
       leftCount = 1
     }
-    if (ship.position.x > -5) {
-      ship.position.x -= 0.1
-      if (ship.rotation.y > (- Math.PI / 8)) {
-        ship.rotation.y -= Math.PI / 80
+    if (shipPivot.position.x > -5) {
+      shipPivot.position.x -= 0.1
+      if (shipPivot.rotation.y > (- Math.PI / 8)) {
+        shipPivot.rotation.y -= Math.PI / 80
       }
     }
   }
   else if (!left && leftCount == 1) {
-    if (ship.rotation.y < 0) {
-      ship.rotation.y += Math.PI / 160
+    if (shipPivot.rotation.y < 0) {
+      shipPivot.rotation.y += Math.PI / 160
 
     }
   }
@@ -453,16 +684,16 @@ function moveShip() {
     if (downCount == 0) {
       downCount = 1
     }
-    if (ship.position.y > -4) {
-      ship.position.y -= 0.1
-      if (ship.rotation.x > (Math.PI - Math.PI / 8)) {
-        ship.rotation.x -= Math.PI / 80
+    if (shipPivot.position.y > -4) {
+      shipPivot.position.y -= 0.1
+      if (shipPivot.rotation.x > (Math.PI - Math.PI / 8)) {
+        shipPivot.rotation.x -= Math.PI / 80
       }
     }
   }
   else if (!down && downCount == 1) {
-    if (ship.rotation.x < Math.PI) {
-      ship.rotation.x += Math.PI / 160
+    if (shipPivot.rotation.x < Math.PI) {
+      shipPivot.rotation.x += Math.PI / 160
 
     }
   }
@@ -471,19 +702,21 @@ function moveShip() {
     if (rigthCount == 0) {
       rigthCount = 1
     }
-    if (ship.position.x < 5) {
-      ship.position.x += 0.1
-      if (ship.rotation.y < (Math.PI / 8)) {
-        ship.rotation.y += Math.PI / 80
+    if (shipPivot.position.x < 5) {
+      shipPivot.position.x += 0.1
+      if (shipPivot.rotation.y < (Math.PI / 8)) {
+        shipPivot.rotation.y += Math.PI / 80
       }
     }
   }
   else if (!rigth && rigthCount == 1) {
-    if (ship.rotation.y > 0) {
-      ship.rotation.y -= Math.PI / 160
+    if (shipPivot.rotation.y > 0) {
+      shipPivot.rotation.y -= Math.PI / 160
 
     }
   }
+
+
 }
 
 //KEYDOWN
@@ -505,6 +738,11 @@ function handleKeyDown(event) {
   }
   if (char == "D") {
     rigth = true
+
+  }
+  if (char == "Z") { //Change to other key
+
+    pause = !pause
 
   }
 
@@ -529,7 +767,6 @@ function handleKeyUp(event) {
     rigth = false
 
   }
-
 }
 
 function ColorLuminance(hex, lum) {
