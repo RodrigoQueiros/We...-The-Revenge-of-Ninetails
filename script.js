@@ -1,9 +1,12 @@
 //Init VARS
-var controls, scene, renderer, camera, ship, plane, plane1, line;
+var controls, scene, renderer, camera, ship, plane, plane1, plane3, plane4, line, healthBar;
 
+var countForAim = 0.40
 var comets = []
 var trails = []
 var trails2 = []
+var pewpew = [] //Shots
+var countPewPew = 0
 var countFrames = 0
 var countFramesTrail = 0
 var countFramesTrail2 = 0
@@ -24,6 +27,12 @@ var isPause = false
 var inMenu = true
 
 var oneTimeThing = false
+
+
+var healthPoints = 100
+var healthOnCollision = 4.800000190734863
+var countCollision = 0
+var collided = false
 
 //OnLoad
 window.onload = function init() {
@@ -113,7 +122,31 @@ function drawMenuLine() {
   line = new THREE.Line(geometry, material);
   line.position.set(-0.37, -3.63, 0)
   scene.add(line);
-  
+
+}
+
+function drawAim() {
+
+  var geometry = new THREE.PlaneGeometry(5, 5);
+  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  var texture = new THREE.TextureLoader().load("./Stuff/aim1.png");
+  material.map = texture;
+  plane3 = new THREE.Mesh(geometry, material);
+  plane3.scale.set(0.4, 0.4, 0.4)
+  plane3.position.z = 15
+  shipPivot.add(plane3);
+
+
+  var geometry = new THREE.PlaneGeometry(5, 5);
+  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  var texture = new THREE.TextureLoader().load("./Stuff/aim2.png");
+  material.map = texture;
+  plane4 = new THREE.Mesh(geometry, material);
+  plane4.scale.set(0.4, 0.4, 0.4)
+  plane4.position.z = 15
+  shipPivot.add(plane4);
+
+
 }
 
 function createMenu() {
@@ -161,9 +194,9 @@ function createUI() {
   healthBarBorderBack.position.set(-9, 12.5, -20)
   scene.add(healthBarBorderBack);
 
-  var geometry = new THREE.PlaneGeometry(9, 0.6);
+  var geometry = new THREE.PlaneGeometry(9.6, 0.6);
   var material = new THREE.MeshBasicMaterial({ color: 0xC9000A, side: THREE.DoubleSide });
-  var healthBar = new THREE.Mesh(geometry, material);
+  healthBar = new THREE.Mesh(geometry, material);
   healthBar.position.set(-9, 12.5, -20) //To move the bar you need to change position in half of the value of the size reduzed,X
   scene.add(healthBar);
 
@@ -190,7 +223,7 @@ function createUI() {
   UltimateBar.position.set(-16, 11, -20)
   scene.add(UltimateBar)
 
-
+  console.log(healthBar.geometry.vertices)
 
 
 }
@@ -455,21 +488,21 @@ function animate() {
 
   if (modeConfirmed) { //Carregou na tecla para confirmar o modo
     inMenu = false
-    
+
 
 
   }
 
   if (inMenu) {
-    
+
     shipPivot.rotation.y += Math.PI / 300
     if (line && arrow == 2) {
       line.position.x = 4.36
-      
+
     }
     if (line && arrow == 1) {
       line.position.x = -0.37
-      
+
     }
 
   }
@@ -536,6 +569,28 @@ function endlessMode() {
     isPause = true
   }
   else if (!pause) {
+    //Lose health
+
+    if (healthBar.geometry.vertices[3].x > healthOnCollision && healthBar.geometry.vertices[0].x < healthBar.geometry.vertices[1].x) {
+      console.log("Entrei")
+      healthBar.geometry.vertices[3].x -= 0.01
+      healthBar.geometry.vertices[1].x -= 0.01
+      if (healthBar.geometry.vertices[1].x <= healthOnCollision) {
+        collided = false
+      }
+      if (healthBar.geometry.vertices[1].x <= healthBar.geometry.vertices[0].x) {
+        console.log("Morreu")
+        healthBar.geometry.vertices[1].x = healthBar.geometry.vertices[0].x
+        healthBar.geometry.vertices[3].x = healthBar.geometry.vertices[0].x
+
+        //Function end game
+      }
+      healthBar.geometry.verticesNeedUpdate = true;
+    }
+    //Update health
+    healthBar.geometry.width = healthPoints * 9.6 / 100
+    healthBar.geometry.verticesNeedUpdate = true;
+    healthBar.position.x = -9
 
     scene.remove(plane1)
     isPause = false
@@ -547,21 +602,38 @@ function endlessMode() {
     moveComets()
     makeShipTrail()
     makeShipTrail1()
+    makePewPew()
+    if (!plane3) {
+      drawAim()
+    }
 
     /*
     if(ship){
       camera.lookAt(ship.position)
     }*/
-
+    //Collisions and lose health
     if (ship && comets.length > 0) {
       BBox = new THREE.Box3().setFromObject(ship);
 
-      comets.forEach(comet => {
+      comets.forEach((comet, i) => {
 
-        if (comet.obj.position.z > -20) {
+        if (comet.obj.position.z > -10) {
           BBox2 = new THREE.Box3().setFromObject(comet.obj);
           var collision = BBox.intersectsBox(BBox2);
-          console.log(collision)
+          if (collision && collided == false) {
+
+            scene.remove(comets[i].obj)
+            comets.splice(i, 1)
+
+            if (!(healthBar.geometry.vertices[1].x <= healthBar.geometry.vertices[0].x)) {
+              healthOnCollision = healthBar.geometry.vertices[3].x - 2
+
+            }
+
+            collided == true
+
+          }
+
 
         }
 
@@ -581,6 +653,54 @@ function storyMode() {
 
 
 }
+
+function makePewPew() {
+  if (ship) {
+    if (countPewPew > 50) {
+
+
+      var geometry = new THREE.CylinderGeometry(1, 1, 20);
+      var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+      var cylinder = new THREE.Mesh(geometry, material);
+      cylinder.rotation.x = Math.PI/2
+      cylinder.scale.set(0.05,0.05,0.05)
+      cylinder.position.set(shipPivot.position.x, shipPivot.position.y, shipPivot.position.z)
+      
+      cylinder.dir = plane3.position.clone() // posição plano (em relação ao pivot)       
+      cylinder.dir.clone().applyMatrix4(shipPivot.matrixWorld) // posição plano em coordenadas mundo
+      cylinder.dir.sub(shipPivot.position.clone()) // direção = posPlano - posPivot
+      cylinder.dir.multiplyScalar(0.001)
+      
+
+      
+
+      pewpew.push(cylinder)
+      scene.add(cylinder);
+      
+
+      countPewPew = 0
+    }
+  }
+
+
+  pewpew.forEach(pew => {
+
+    pew.position.addVectors(pew.position.clone(),pew.dir)
+    
+
+    comets.forEach(comet => {
+
+      //Colisão?
+      
+
+    });
+
+  });
+
+  countPewPew++
+
+}
+
 
 //2 ship trails
 function makeShipTrail1() {
