@@ -13,6 +13,9 @@ var countFramesTrail2 = 0
 var posBackShipX = 0
 var posBackShipY = 0
 
+
+var countDamage = 0
+
 var currentScore = 0
 var currentBest = 0
 if (localStorage.getItem("currentBest") == null) {
@@ -35,12 +38,16 @@ var inMenu = true
 
 var oneTimeThing = false
 var dead = false
-
+var toMenu = false
 
 var healthPoints = 100
 var healthOnCollision = 4.800000190734863
 var countCollision = 0
 var collided = false
+
+var ultimateProgress = 0
+var useUltimate = false
+var ultiEffect = {c: 100, t:0, d: false}
 
 //OnLoad
 window.onload = function init() {
@@ -62,6 +69,30 @@ window.onload = function init() {
   plane1 = new THREE.Mesh(geometry, material);
   plane1.scale.set(1.3, 1.3, 1.3)
   plane1.position.z = -190
+
+  var geometry = new THREE.PlaneGeometry(200, 150);
+  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  var texture = new THREE.TextureLoader().load("./Stuff/lost.png");
+  material.map = texture;
+  plane11 = new THREE.Mesh(geometry, material);
+  plane11.scale.set(1.3, 1.3, 1.3)
+  plane11.position.z = -190
+
+  var geometry = new THREE.PlaneGeometry(200, 150);
+  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  var texture = new THREE.TextureLoader().load("./Stuff/damage.png");
+  material.map = texture;
+  plane111 = new THREE.Mesh(geometry, material);
+  plane111.scale.set(1.3, 1.3, 1.3)
+  plane111.position.z = -190
+
+  var geometry = new THREE.PlaneGeometry(200, 150);
+  var material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+  var texture = new THREE.TextureLoader().load("./Stuff/ulti.png");
+  material.map = texture;
+  plane1111 = new THREE.Mesh(geometry, material);
+  plane1111.scale.set(1.3, 1.3, 1.3)
+  plane1111.position.z = -190
 
 
 
@@ -224,9 +255,8 @@ function createUI() {
   scene.add(UltimateBarBorderBack)
 
 
-  var geometry = new THREE.RingGeometry(1, 2, 32, 8, Math.PI / 2, -Math.PI); //Change last angle in negative, if 100% green #00F03D 
+  var geometry = new THREE.RingGeometry(1, 2, 32, 8, Math.PI / 2, 0); //Change last angle in negative, if 100% green #00F03D 
   var material = new THREE.MeshBasicMaterial({ color: 0xFECF41, side: THREE.DoubleSide });
-
   UltimateBar = new THREE.Mesh(geometry, material)
   UltimateBar.position.set(-16, 11, -20)
   scene.add(UltimateBar)
@@ -289,7 +319,7 @@ function createSpaceShip() {
     //ship.rotation.y = 0
 
 
-    
+
     shipPivot.add(ship);
 
 
@@ -297,19 +327,19 @@ function createSpaceShip() {
   });
   // });
 
-  
+
 
   shootPivot = new THREE.Object3D;
   shipPivot.add(shootPivot);
-  
+
   var geometry = new THREE.BoxGeometry(1, 1, 1);
-  var material = new THREE.MeshNormalMaterial({visible: false});
+  var material = new THREE.MeshNormalMaterial({ visible: false });
   theCube = new THREE.Mesh(geometry, material);
   theCube.scale.set(0.1, 0.1, 0.1)
-  theCube.position.set(0,0.3,1.5)
-  
+  theCube.position.set(0, 0.3, 1.5)
+
   shootPivot.add(theCube);
-  
+
 
 
 }
@@ -527,12 +557,18 @@ function animate() {
     scene.remove(line)
 
     if (arrow == 1) { //Mode 1
-      initModes(storyMode)
+      if (!dead) {
+
+        initModes(endlessMode) //storyMode
+      }
+      else {
+        isDead()
+      }
     }
     if (arrow == 2) { //Mode 2
 
-      
-      if(!dead){
+
+      if (!dead) {
         initModes(endlessMode)
       }
       else {
@@ -548,16 +584,22 @@ function animate() {
 
 }
 
-function isDead(){
+function isDead() {
 
   if (currentScore > localStorage.getItem("currentBest")) {
     currentBest = currentScore
     localStorage.setItem("currentBest", currentBest)
   }
-  //Load image and plane
-  //Option go to menu
-  //Then reload
-  location.reload();
+
+
+  scene.add(plane11);
+  isPause = true
+
+  if (toMenu) {
+    location.reload();
+  }
+
+
 
 }
 
@@ -592,10 +634,21 @@ function initModes(mode) {
   }
 }
 
+function gotHit() {
+
+
+
+
+}
+
+
+
 //Modes
 function endlessMode() {
   oneTimeThing = true
   if (pause && !isPause) {
+
+
 
     scene.add(plane1);
 
@@ -608,6 +661,18 @@ function endlessMode() {
       console.log("Entrei")
       healthBar.geometry.vertices[3].x -= 0.01
       healthBar.geometry.vertices[1].x -= 0.01
+
+      countDamage += 1
+      console.log(countDamage)
+      if (countDamage >= 20) {
+        scene.remove(plane111)
+        countDamage = 0
+      }
+      else if (countDamage >= 10) {
+        scene.add(plane111)
+      }
+
+
       if (healthBar.geometry.vertices[1].x <= healthOnCollision) {
         collided = false
       }
@@ -621,6 +686,11 @@ function endlessMode() {
       }
       healthBar.geometry.verticesNeedUpdate = true;
     }
+    if (healthBar.geometry.vertices[3].x > healthOnCollision && healthBar.geometry.vertices[0].x >= healthBar.geometry.vertices[1].x) {
+      scene.remove(plane111)
+      countDamage = 0
+      //Ter a certeza que a layer de aviso de dano é removida depois da barra de vida parar
+    }
     //Update health
     healthBar.geometry.width = healthPoints * 9.6 / 100
     healthBar.geometry.verticesNeedUpdate = true;
@@ -628,6 +698,7 @@ function endlessMode() {
 
     scene.remove(plane1)
     isPause = false
+
 
     plane.rotation.z += 0.001
 
@@ -676,45 +747,110 @@ function endlessMode() {
 
     }
     //Collision Pew Comet
-    if(pewpew.length>0 && comets.length>0 ){
-      pewpew.forEach((pew,j) => {
+    if (pewpew.length > 0 && comets.length > 0) {
+      pewpew.forEach((pew, j) => {
         BBox = new THREE.Box3().setFromObject(pew);
 
-        if(pew.position.z < -100){
+        if (pew.position.z < -100) {
           scene.remove(pewpew[j])
           pewpew.splice(j, 1)
+          j--
         }
 
         comets.forEach((comet, i) => {
           BBox2 = new THREE.Box3().setFromObject(comet.obj);
           var collision = BBox.intersectsBox(BBox2);
-          if(collision){
+          if (collision) {
+
+            scene.remove(UltimateBar)
+            ultimateProgress += (-Math.PI / 10)
+            var geometry = new THREE.RingGeometry(1, 2, 32, 8, Math.PI / 2, ultimateProgress); //Change last angle in negative, if 100% green #00F03D
+            if (ultimateProgress <= -2 * Math.PI) {
+              var material = new THREE.MeshBasicMaterial({ color: 0x00F03D, side: THREE.DoubleSide });
+            }
+            else {
+              var material = new THREE.MeshBasicMaterial({ color: 0xFECF41, side: THREE.DoubleSide });
+            }
+            UltimateBar = new THREE.Mesh(geometry, material)
+            UltimateBar.position.set(-16, 11, -20)
+
+            scene.add(UltimateBar)
+
+
             scene.remove(comets[i].obj)
             comets.splice(i, 1)
+            i--
 
             scene.remove(pewpew[j])
             pewpew.splice(j, 1)
+            j--
           }
 
         })
-        
+
       });
 
     }
 
-    //
-    
-    
+    if (ultimateProgress <= -2 * Math.PI && useUltimate) {
 
+      ultiEffect.d = true
+      ultimateProgress = 0
+      useUltimate = false
+
+      scene.remove(UltimateBar)
+      var geometry = new THREE.RingGeometry(1, 2, 32, 8, Math.PI / 2, ultimateProgress); //Change last angle in negative, if 100% green #00F03D      
+      var material = new THREE.MeshBasicMaterial({ color: 0xFECF41, side: THREE.DoubleSide });
+      UltimateBar = new THREE.Mesh(geometry, material)
+      UltimateBar.position.set(-16, 11, -20)
+
+      scene.add(UltimateBar)
+
+    }
+
+    if(ultiEffect.d){
+      ultimateEffect()
+    }
 
   }
 
 }
 
+//Effect of ultimate before clean all enemys
+function ultimateEffect(){
+  ultiEffect.t++
+
+  if(ultiEffect.t>= 20){ 
+    scene.remove(plane1111)
+    ultiEffect.c -= 10
+    ultiEffect.t = 0
+  }
+  else if(ultiEffect.t>=10) {
+    scene.add(plane1111)
+    
+  }
+
+  if(ultiEffect.c == 0){
+    cleanEnemys()
+    ultiEffect.c = 100
+    ultiEffect.t = 0
+    ultiEffect.d = false
+  }
+
+    
+}
+
+function cleanEnemys() {
+  for (let i = 0; i < comets.length; i++) {
+    scene.remove(comets[i].obj)
+    comets.splice(i, 1)
+    i--
+    
+  }
+
+}
+
 function storyMode() {
-
-
-
 
 
 }
@@ -727,8 +863,8 @@ function makePewPew() {
       var geometry = new THREE.CylinderGeometry(1, 1, 20);
       var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
       var cylinder = new THREE.Mesh(geometry, material);
-      cylinder.rotation.x = Math.PI/2 
-      cylinder.scale.set(0.05,0.05,0.05)
+      cylinder.rotation.x = Math.PI / 2
+      cylinder.scale.set(0.05, 0.05, 0.05)
       //cylinder.position.set(shipPivot.position.x, shipPivot.position.y + 0.5, shipPivot.position.z)//shipPivot//shootPivot
       cylinder.position.set(0, 0, 0)
       cylinder.position.applyMatrix4(theCube.matrixWorld)
@@ -739,13 +875,13 @@ function makePewPew() {
       cylinder.dir.sub(shipPivot.position.clone()) // direção = posPlano - posPivot
       //cylinder.dir.multiplyScalar(-1)
       cylinder.dir.multiplyScalar(0.01)
-      
-      
-      
+
+
+
 
       pewpew.push(cylinder)
       scene.add(cylinder);
-      
+
 
       countPewPew = 0
     }
@@ -754,14 +890,14 @@ function makePewPew() {
 
   pewpew.forEach(pew => {
 
-    pew.position.addVectors(pew.position.clone(),pew.dir)
-    
+    pew.position.addVectors(pew.position.clone(), pew.dir)
+
 
     comets.forEach(comet => {
 
-      
+
       //Colisão?
-      
+
 
     });
 
@@ -1061,11 +1197,23 @@ function handleKeyDown(event) {
   if (char == " ") { //Change to other key
 
     if (modeConfirmed) {
-      pause = !pause
+
+      if (dead) {
+        toMenu = true
+      }
+      else {
+        pause = !pause
+      }
     }
     if (!modeConfirmed) {
       modeConfirmed = true
       createUI()
+    }
+
+  }
+  if (char == "E") {
+    if (ultimateProgress <= -2 * Math.PI) {
+      useUltimate = true
     }
 
   }
