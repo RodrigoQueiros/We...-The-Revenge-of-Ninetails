@@ -1,5 +1,5 @@
 //Init VARS
-var controls, scene, renderer, camera, ship, plane, plane1, plane3, plane4, line, healthBar;
+var controls, scene, renderer, camera, ship, plane, plane1, plane3, plane4, line, healthBar, shootPivot, theCube;
 
 var countForAim = 0.40
 var comets = []
@@ -12,6 +12,13 @@ var countFramesTrail = 0
 var countFramesTrail2 = 0
 var posBackShipX = 0
 var posBackShipY = 0
+
+var currentScore = 0
+var currentBest = 0
+if (localStorage.getItem("currentBest") == null) {
+  localStorage.setItem("currentBest", currentBest)
+}
+
 
 //Sound
 //var mainTheme = "mainTheme"
@@ -27,6 +34,7 @@ var isPause = false
 var inMenu = true
 
 var oneTimeThing = false
+var dead = false
 
 
 var healthPoints = 100
@@ -281,20 +289,27 @@ function createSpaceShip() {
     //ship.rotation.y = 0
 
 
-
-
+    
     shipPivot.add(ship);
-    //
-    //Ship 
-
 
 
 
   });
   // });
 
+  
 
-
+  shootPivot = new THREE.Object3D;
+  shipPivot.add(shootPivot);
+  
+  var geometry = new THREE.BoxGeometry(1, 1, 1);
+  var material = new THREE.MeshNormalMaterial({visible: false});
+  theCube = new THREE.Mesh(geometry, material);
+  theCube.scale.set(0.1, 0.1, 0.1)
+  theCube.position.set(0,0.3,1.5)
+  
+  shootPivot.add(theCube);
+  
 
 
 }
@@ -516,8 +531,13 @@ function animate() {
     }
     if (arrow == 2) { //Mode 2
 
-      initModes(endlessMode)
-
+      
+      if(!dead){
+        initModes(endlessMode)
+      }
+      else {
+        isDead()
+      }
 
     }
 
@@ -528,9 +548,22 @@ function animate() {
 
 }
 
+function isDead(){
+
+  if (currentScore > localStorage.getItem("currentBest")) {
+    currentBest = currentScore
+    localStorage.setItem("currentBest", currentBest)
+  }
+  //Load image and plane
+  //Option go to menu
+  //Then reload
+  location.reload();
+
+}
 
 
 function initModes(mode) {
+  currentScore = 0
   //Animation menu -> startgame
   //This code change the size of the ship
   if (shipPivot.scale.x >= 1) {
@@ -584,6 +617,7 @@ function endlessMode() {
         healthBar.geometry.vertices[3].x = healthBar.geometry.vertices[0].x
 
         //Function end game
+        dead = true
       }
       healthBar.geometry.verticesNeedUpdate = true;
     }
@@ -641,6 +675,37 @@ function endlessMode() {
       });
 
     }
+    //Collision Pew Comet
+    if(pewpew.length>0 && comets.length>0 ){
+      pewpew.forEach((pew,j) => {
+        BBox = new THREE.Box3().setFromObject(pew);
+
+        if(pew.position.z < -100){
+          scene.remove(pewpew[j])
+          pewpew.splice(j, 1)
+        }
+
+        comets.forEach((comet, i) => {
+          BBox2 = new THREE.Box3().setFromObject(comet.obj);
+          var collision = BBox.intersectsBox(BBox2);
+          if(collision){
+            scene.remove(comets[i].obj)
+            comets.splice(i, 1)
+
+            scene.remove(pewpew[j])
+            pewpew.splice(j, 1)
+          }
+
+        })
+        
+      });
+
+    }
+
+    //
+    
+    
+
 
   }
 
@@ -662,16 +727,20 @@ function makePewPew() {
       var geometry = new THREE.CylinderGeometry(1, 1, 20);
       var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
       var cylinder = new THREE.Mesh(geometry, material);
-      cylinder.rotation.x = Math.PI/2
+      cylinder.rotation.x = Math.PI/2 
       cylinder.scale.set(0.05,0.05,0.05)
-      cylinder.position.set(shipPivot.position.x, shipPivot.position.y, shipPivot.position.z)
-      
-      cylinder.dir = plane3.position.clone() // posição plano (em relação ao pivot)       
-      cylinder.dir.clone().applyMatrix4(shipPivot.matrixWorld) // posição plano em coordenadas mundo
-      cylinder.dir.sub(shipPivot.position.clone()) // direção = posPlano - posPivot
-      cylinder.dir.multiplyScalar(0.001)
-      
+      //cylinder.position.set(shipPivot.position.x, shipPivot.position.y + 0.5, shipPivot.position.z)//shipPivot//shootPivot
+      cylinder.position.set(0, 0, 0)
+      cylinder.position.applyMatrix4(theCube.matrixWorld)
 
+      cylinder.dir = plane3.position.clone() // posição plano (em relação ao pivot)    
+      // cylinder.dir = cylinder.dir.clone().applyMatrix4(shipPivot.matrixWorld) // posição plano em coordenadas mundo
+      cylinder.dir.applyMatrix4(shipPivot.matrixWorld)
+      cylinder.dir.sub(shipPivot.position.clone()) // direção = posPlano - posPivot
+      //cylinder.dir.multiplyScalar(-1)
+      cylinder.dir.multiplyScalar(0.01)
+      
+      
       
 
       pewpew.push(cylinder)
@@ -690,6 +759,7 @@ function makePewPew() {
 
     comets.forEach(comet => {
 
+      
       //Colisão?
       
 
