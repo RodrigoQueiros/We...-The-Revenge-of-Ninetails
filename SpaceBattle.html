@@ -9,7 +9,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #232624;
+            background-color: #232624 !important;
         }
 
         canvas {
@@ -18,9 +18,21 @@
             display: block;
             margin-top: 20px;
             margin-right: auto;
-            margin-left:auto;
-            
+            margin-left: auto;
+
         }
+        .text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .text1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold;
+        }
+        
+
+
     </style>
     <script type="text/javascript" src="libs/three.min.js"></script>
     <script type="text/javascript" src="libs/OrbitControls.js"></script>
@@ -29,11 +41,19 @@
     <script type="text/javascript" src="libs/OBJLoader.js"></script>
     <script type="text/javascript" src="libs/MTLLoader.js"></script>
     <script type="text/javascript" src="script.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,800i&display=swap" rel="stylesheet">
+    
+
 </head>
 
 <body>
+    <div clas="row">
+        <canvas id="webglcanvas" width=800 height=600></canvas>
+    </div>
+    
 
-    <canvas id="webglcanvas" width=800 height=600></canvas>
+
+
 </body>
 
 </html>

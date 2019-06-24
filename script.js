@@ -3,6 +3,7 @@ var controls, scene, renderer, camera, ship, plane, plane1, plane3, plane4, line
 
 var countForAim = 0.40
 var comets = []
+var lifes = []
 var trails = []
 var trails2 = []
 var pewpew = [] //Shots
@@ -17,10 +18,16 @@ var posBackShipY = 0
 var countDamage = 0
 
 var currentScore = 0
-var currentBest = 0
-if (localStorage.getItem("currentBest") == null) {
-  localStorage.setItem("currentBest", currentBest)
+var astroidsDestroyed = 0
+if (localStorage.getItem("astroidsDestroyed")) {
+  astroidsDestroyed = localStorage.getItem("astroidsDestroyed")
 }
+
+var currentBest = 0
+if (localStorage.getItem("currentBest")) {
+  currentBest = localStorage.getItem("currentBest")
+}
+
 
 
 //Sound
@@ -47,7 +54,15 @@ var collided = false
 
 var ultimateProgress = 0
 var useUltimate = false
-var ultiEffect = {c: 100, t:0, d: false}
+var ultiEffect = { c: 100, t: 0, d: false }
+var endlessSpeed = { s: 0.2, c: 360, r: 0.001 } //Speed of creation, speed of reload, rotation of vortex
+
+var multiplier = 1
+var multiplierAdd = 10
+var maxCombo = 0
+if (localStorage.getItem("maxCombo")) {
+  maxCombo = localStorage.getItem("maxCombo")
+}
 
 //OnLoad
 window.onload = function init() {
@@ -60,6 +75,34 @@ window.onload = function init() {
 
 
   //createjs.Sound.registerSound("Stuff/Hollow Knight- Sealed Vessel Theme EXTENDED.mp3", mainTheme);
+
+
+  scoreText = document.createElement('div');
+  scoreText.style.position = 'absolute';
+  scoreText.style.width = 100;
+  scoreText.style.height = 100;
+  scoreText.innerHTML += "ENDLESS MODE";
+  scoreText.style.color = "white";
+  scoreText.innerHTML += "<br><br>-BEST SCORE: " + currentBest;
+  scoreText.innerHTML += "<br>-TOTAL OF ASTROIDS DESTROYED: " + astroidsDestroyed;
+  scoreText.innerHTML += "<br>-Max Combo: " + maxCombo;
+  scoreText.style.top = 20 + 'px';
+  scoreText.style.left = 50 + 'px';
+  scoreText.className = "text"
+  document.body.appendChild(scoreText);
+
+
+  thescoreText = document.createElement('div');
+  thescoreText.style.position = 'absolute';
+  thescoreText.style.width = 100;
+  thescoreText.style.height = 100;
+  thescoreText.style.color = "#BC2020";
+  thescoreText.innerHTML = "SCORE: " + currentScore + "<br>Velocity: x" + (endlessSpeed.r * 1000) + "<br>Combo: " + (multiplier-1);
+  thescoreText.style.top = 70 + 'px';
+  thescoreText.style.left = 480 + 'px';
+  thescoreText.className = "text1"
+  document.body.appendChild(thescoreText);
+
 
 
   var geometry = new THREE.PlaneGeometry(200, 150);
@@ -121,8 +164,8 @@ window.onload = function init() {
   //createUI()
 
 
-  controls = new THREE.OrbitControls(camera);
-  controls.addEventListener('change', function () { renderer.render(scene, camera); });
+  //controls = new THREE.OrbitControls(camera);
+  //controls.addEventListener('change', function () { renderer.render(scene, camera); });
 
   // controls = new THREE.OrbitControls(camera);
   // controls.addEventListener('change', function () { renderer.render(scene, camera); });
@@ -220,6 +263,8 @@ function createUI() {
   mesh.material.color.setRGB 1.6 - y, y
   mesh.rotation.z = (180 - (180 * y)) * (Math.PI / 180)*/
 
+
+
   //HealthBar
   var geometry = new THREE.PlaneGeometry(10, 1);
   var material = new THREE.MeshBasicMaterial({ color: 0x262626, side: THREE.DoubleSide });
@@ -236,7 +281,7 @@ function createUI() {
   var geometry = new THREE.PlaneGeometry(9.6, 0.6);
   var material = new THREE.MeshBasicMaterial({ color: 0xC9000A, side: THREE.DoubleSide });
   healthBar = new THREE.Mesh(geometry, material);
-  healthBar.position.set(-9, 12.5, -20) //To move the bar you need to change position in half of the value of the size reduzed,X
+  healthBar.position.set(-9, 12.5, -20) 
   scene.add(healthBar);
 
   //Ultimate
@@ -261,7 +306,7 @@ function createUI() {
   UltimateBar.position.set(-16, 11, -20)
   scene.add(UltimateBar)
 
-  console.log(healthBar.geometry.vertices)
+
 
 
 }
@@ -344,13 +389,47 @@ function createSpaceShip() {
 
 }
 
+
+
+function createLife() {
+  rand1 = parseInt(Math.random() * 5)
+  console.log(rand1)
+  if (rand1 == 1) {
+
+    x = (Math.random() * 12) - 6
+    y = (Math.random() * 8) - 4
+    z = -200
+
+    var geometry = new THREE.TorusKnotGeometry(1, 0.3);
+    var material = new THREE.MeshNormalMaterial({ color: 0xffff00 });
+    var torusKnot = new THREE.Mesh(geometry, material);
+    torusKnot.scale.set(0.3, 0.3, 0.3)
+    torusKnot.position.set(x, y, z)
+    scene.add(torusKnot);
+    lifes.push(torusKnot)
+
+  }
+
+
+
+}
+
+
+
+
 function createRocks() {
 
   countFrames++
 
-  while (countFrames > 360) {
+  while (countFrames > endlessSpeed.c) {
     countFrames = 0
     var x, y, z
+
+
+    createLife()
+
+
+
     for (let i = 0; i < 5; i++) {
       x = (Math.random() * 12) - 6
       y = (Math.random() * 8) - 4
@@ -589,8 +668,14 @@ function isDead() {
   if (currentScore > localStorage.getItem("currentBest")) {
     currentBest = currentScore
     localStorage.setItem("currentBest", currentBest)
-  }
 
+  }
+  localStorage.setItem("astroidsDestroyed", astroidsDestroyed)
+  if (maxCombo > localStorage.getItem("maxCombo")) {
+    
+    localStorage.setItem("maxCombo", maxCombo)
+
+  }
 
   scene.add(plane11);
   isPause = true
@@ -605,7 +690,7 @@ function isDead() {
 
 
 function initModes(mode) {
-  currentScore = 0
+
   //Animation menu -> startgame
   //This code change the size of the ship
   if (shipPivot.scale.x >= 1) {
@@ -658,12 +743,12 @@ function endlessMode() {
     //Lose health
 
     if (healthBar.geometry.vertices[3].x > healthOnCollision && healthBar.geometry.vertices[0].x < healthBar.geometry.vertices[1].x) {
-      console.log("Entrei")
+
       healthBar.geometry.vertices[3].x -= 0.01
       healthBar.geometry.vertices[1].x -= 0.01
 
       countDamage += 1
-      console.log(countDamage)
+
       if (countDamage >= 20) {
         scene.remove(plane111)
         countDamage = 0
@@ -677,7 +762,7 @@ function endlessMode() {
         collided = false
       }
       if (healthBar.geometry.vertices[1].x <= healthBar.geometry.vertices[0].x) {
-        console.log("Morreu")
+
         healthBar.geometry.vertices[1].x = healthBar.geometry.vertices[0].x
         healthBar.geometry.vertices[3].x = healthBar.geometry.vertices[0].x
 
@@ -700,9 +785,10 @@ function endlessMode() {
     isPause = false
 
 
-    plane.rotation.z += 0.001
+    plane.rotation.z += endlessSpeed.r
 
     createRocks()
+
     moveShip()
     moveComets()
     makeShipTrail()
@@ -727,6 +813,7 @@ function endlessMode() {
           var collision = BBox.intersectsBox(BBox2);
           if (collision && collided == false) {
 
+            multiplier = 1
             scene.remove(comets[i].obj)
             comets.splice(i, 1)
 
@@ -761,6 +848,12 @@ function endlessMode() {
           BBox2 = new THREE.Box3().setFromObject(comet.obj);
           var collision = BBox.intersectsBox(BBox2);
           if (collision) {
+            multiplier++
+            astroidsDestroyed++
+
+            if(multiplier-1 > maxCombo){
+              maxCombo = multiplier-1
+            }
 
             scene.remove(UltimateBar)
             ultimateProgress += (-Math.PI / 10)
@@ -784,9 +877,52 @@ function endlessMode() {
             scene.remove(pewpew[j])
             pewpew.splice(j, 1)
             j--
+
+            console.log(((multiplier-1)*multiplierAdd + 500))
+            currentScore += ((multiplier-1)*multiplierAdd + 500)
           }
 
         })
+
+      });
+
+    }
+
+    //Get lifes
+    if (lifes.length > 0) {
+      BBox = new THREE.Box3().setFromObject(ship);
+      lifes.forEach((life, k) => {
+
+        if (life.position.z > -10) {
+          BBox2 = new THREE.Box3().setFromObject(life);
+          var collision = BBox.intersectsBox(BBox2);
+
+          if (collision) {
+
+
+            scene.remove(lifes[k])
+            lifes.splice(k, 1)
+
+
+            healthOnCollision += 2
+            healthBar.geometry.vertices[3].x += 2
+            healthBar.geometry.vertices[1].x += 2
+
+            if (healthOnCollision > 4.800000190734863) {
+              healthOnCollision = 4.800000190734863
+              healthBar.geometry.vertices[3].x = 4.800000190734863
+              healthBar.geometry.vertices[1].x = 4.800000190734863
+              currentScore+=500
+            }
+            
+
+
+          }
+
+
+
+        }
+
 
       });
 
@@ -808,36 +944,69 @@ function endlessMode() {
 
     }
 
-    if(ultiEffect.d){
+    if (ultiEffect.d) {
       ultimateEffect()
     }
+
+
+    if (currentScore > 10000) {
+      endlessSpeed.s = 0.3
+      endlessSpeed.c = 260
+      endlessSpeed.r = 0.002
+    }
+    if (currentScore > 25000) {
+      endlessSpeed.s = 0.4
+      endlessSpeed.c = 200
+      endlessSpeed.r = 0.005
+    }
+    if (currentScore > 50000) {
+      endlessSpeed.s = 0.6
+      endlessSpeed.c = 150
+      endlessSpeed.r = 0.01
+    }
+    if (currentScore > 100000) {
+      endlessSpeed.s = 1
+      endlessSpeed.c = 100
+      endlessSpeed.r = 0.02
+    }
+    currentScore++
+
+
+
+
+
+    
+    thescoreText.innerHTML = "SCORE: " + currentScore + "<br>Velocity: x" + (endlessSpeed.r * 1000) + "<br>Combo: " + (multiplier-1);
+
+
+
 
   }
 
 }
 
 //Effect of ultimate before clean all enemys
-function ultimateEffect(){
+function ultimateEffect() {
   ultiEffect.t++
 
-  if(ultiEffect.t>= 20){ 
+  if (ultiEffect.t >= 20) {
     scene.remove(plane1111)
     ultiEffect.c -= 10
     ultiEffect.t = 0
   }
-  else if(ultiEffect.t>=10) {
+  else if (ultiEffect.t >= 10) {
     scene.add(plane1111)
-    
+
   }
 
-  if(ultiEffect.c == 0){
+  if (ultiEffect.c == 0) {
     cleanEnemys()
     ultiEffect.c = 100
     ultiEffect.t = 0
     ultiEffect.d = false
   }
 
-    
+
 }
 
 function cleanEnemys() {
@@ -845,7 +1014,7 @@ function cleanEnemys() {
     scene.remove(comets[i].obj)
     comets.splice(i, 1)
     i--
-    
+
   }
 
 }
@@ -857,7 +1026,7 @@ function storyMode() {
 
 function makePewPew() {
   if (ship) {
-    if (countPewPew > 50) {
+    if (countPewPew > 30) {
 
 
       var geometry = new THREE.CylinderGeometry(1, 1, 20);
@@ -874,7 +1043,7 @@ function makePewPew() {
       cylinder.dir.applyMatrix4(shipPivot.matrixWorld)
       cylinder.dir.sub(shipPivot.position.clone()) // direção = posPlano - posPivot
       //cylinder.dir.multiplyScalar(-1)
-      cylinder.dir.multiplyScalar(0.01)
+      cylinder.dir.multiplyScalar(0.03)
 
 
 
@@ -1070,10 +1239,26 @@ function makeShipTrail() {
 //Move, update
 function moveComets() {
 
+  //lifes
+
+  lifes.forEach((life, i) => {
+    life.position.z += endlessSpeed.s
+    life.rotation.z += 0.03
+    if (life.position.z > 10) {
+      scene.remove(lifes[i])
+
+      lifes.splice(i, 1)
+    }
+
+
+  });
+
+
   comets.forEach((comet, i) => {
 
     //Move
-    comet.obj.position.z += 0.2
+    comet.obj.position.z += endlessSpeed.s
+
     if (comet.obj.position.z > 10) {
       scene.remove(comets[i].obj)
 
