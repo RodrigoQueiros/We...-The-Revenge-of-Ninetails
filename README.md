@@ -8,7 +8,7 @@ Part 2 -
 
 Part 3 - Endlessmode  (Game)
 
-![](Stuff/prints/1.jpg)
+![](Stuff/prints/1.JPG)
 
 ![](Stuff/prints/2.jpg)
 
