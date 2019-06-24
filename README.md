@@ -1,4 +1,4 @@
-# We... The Revenge of Ninetails
+# We... Endless Mode
 
 We... series
 
@@ -6,7 +6,7 @@ Part 1 - Are the bad guys (Animation)
 
 Part 2 - 
 
-Part 3 - The Revenge of Ninetails (Game)
+Part 3 - Endlessmode
 
 
 
