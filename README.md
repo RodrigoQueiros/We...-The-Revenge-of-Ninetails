@@ -8,8 +8,11 @@ Part 2 -
 
 Part 3 - Endlessmode  (Game)
 
-![](/images2/print.PNG )
-![](/images2/print.PNG )
+![](Stuff/prints/1.jpg)
+
+![](Stuff/prints/2.jpg)
+
+![](Stuff/prints/3.jpg)
 
 
 
