@@ -10,12 +10,6 @@ Part 3 - Endlessmode  (Game)
 
 ![](Stuff/prints/1.JPG)
 
-![](Stuff/prints/2.jpg)
+![](Stuff/prints/2.JPG)
 
-![](Stuff/prints/3.jpg)
-
-
-
-
-
-In progress...
+![](Stuff/prints/3.JPG)
